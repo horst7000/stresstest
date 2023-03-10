@@ -37,7 +37,7 @@
     :x="box.x"
     :y="box.y"
     :ry="190 * box.scale"
-    @click="() => deleteBox(box.id)"/>
+    @contextmenu="() => deleteBox(box.id)"/>
   <text
     v-if="!box.id.includes(':')"
     style="fill:#ffffff;"
@@ -48,19 +48,6 @@
     :x="80*box.scale+box.x"
     :y="330*box.scale+box.y"
     text-rendering="optimizeSpeed">{{box.text}}</text>
-
-
-  <!-- <text
-    style="fill:#ffffff; font-size: 15pt;"
-    cursor= "default"
-    word-wrap= "break-word"
-    user-select= "none"
-    :display="touched&&moving?'none':'initial'"
-    :x="origin + 100 * (i%14)"
-    :y="origin + 40 + 100 * Math.floor(i/14)"
-    text-rendering="optimizeSpeed"
-    ry="0"
-    v-for="i in 120">AaBbCc</text> -->
 </template>
 
 <script setup>
