@@ -1,7 +1,13 @@
-# Vue 3 + Vite
+# What was tested
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Idea was to find out what breaks performance when using [panzoom](https://github.com/anvaka/panzoom) with many objects and how to fix the issues.
 
-## Recommended IDE Setup
+## Main issues were big texts.
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+SVG+text vs. div+p was tested. Both performed bad, when using much big text. Small text and divs/rects without text didn't break the performance too heavily.
+
+## Solution
+
+Solution was using a chunk system which unloads text which is not on screen. Especially when zoomed in text got displayed bigger. But at the same time much of the initial displayed text was not on screen anymore, so could be unloaded.
+
+Chunking system in combination with absolute positioned divs showed best performance.
