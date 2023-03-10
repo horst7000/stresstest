@@ -55,83 +55,18 @@
 
   /* ---------------- computed ---------------- */  
   /* ---------------- functions --------------- */  
-  function offUpdate() {
+  function offsetUpdate() {
     let { x, y, scale } = panzoom.getTransform();
     if(x!=0 || y!=0 || scale != 1) {
-      updateElements(x,y,scale);
+      resetPanzoom(x,y,scale);
       updatePos(-x,-y,scale);
     }
   }
   
-  function updateElements(x,y,scale) {  
-    if(!container) return;
+  function resetPanzoom(x,y,scale) {  
     panzoom.moveTo(0,0);
     panzoom.zoomTo(0,0,1/scale);
     fastdom.mutate(() => container.value.style.transform = "matrix(1,0,0,1,0,0)");
-    for (let i = 0; i < container.value.children.length; i++) {
-      const element = container.value.children[i];
-      // if(element.tagName == 'DIV') {
-      //   fastdom.measure(() => {
-      //     const elW = parseFloat(element.style.width);
-      //     const elH = parseFloat(element.style.height);
-      //     fastdom.mutate(() => {
-      //       element.style.width = elW * scale +'px';
-      //       element.style.height = elH * scale +'px';
-      //     })
-      //   })
-
-      //   if(element.dataset.key.includes(':')) {
-      //     fastdom.measure(() => {
-      //       const elX = parseFloat(element.style.left);
-      //       const elY = parseFloat(element.style.top);
-      //       const elBw = parseFloat(element.style.borderWidth);
-      //       fastdom.mutate(() => {
-      //         element.style.left = elX * scale + x +'px';
-      //         element.style.top = elY * scale + y +'px';
-      //         element.style.borderWidth = elBw * scale +'px';
-      //       })
-      //     })
-      //   } else {
-      //     fastdom.measure(() => {
-      //       const elX = parseFloat(element.style.left);
-      //       const elY = parseFloat(element.style.top);
-      //       const elRy = parseFloat(element.style.borderRadius);
-      //       const elFs = parseFloat(element.style.fontSize);
-      //       const elP = parseFloat(element.style.padding);
-      //       // const elBA = element.style.boxShadow.split(' ');
-      //       // const elBs = elBA ? parseFloat(elBA[elBA.length-2]) : 0;
-      //       fastdom.mutate(() => {
-      //         element.style.left = elX * scale + x +'px';
-      //         element.style.top = elY * scale + y +'px';
-      //         element.style.borderRadius = elRy * scale +'px';
-      //         element.style.fontSize = elFs * scale +'pt';
-      //         element.style.boxShadow =
-      //           `#00000040 ${(elX * scale + x - windowSize.value.w/2)/10}px ${(elY * scale + y - windowSize.value.h/2)/10}px 4px`;
-      //         element.style.padding = elP * scale +'px';
-      //       })
-      //     })
-      //   }
-      // }
-      // validateSizeAndPos(element);
-    }
-  }
-  
-  function validateSizeAndPos(element) {
-    const maxWidth = 2.5e3;
-    const minWidth = 1;
-    if(element.tagName == 'p') {
-    } else {
-      fastdom.measure(() => {
-        const elX = parseFloat(element.style.left);
-        const elY = parseFloat(element.style.top);
-        const elW = parseFloat(element.style.width);
-        if(elW > maxWidth || elW < minWidth ||
-          elX < -windowSize.value.w || elX > 2*windowSize.value.w ||
-          elY < -windowSize.value.h || elY > 2*windowSize.value.h) {
-            fastdom.mutate(() => delete renderedBoxes.value[element.dataset.key]);
-        }
-      });
-    }
   }
   
   function updatePos(dx,dy,scaleFactor) {      
@@ -338,7 +273,7 @@
   let timer;
   function onTransform() {
     clearTimeout(timer);
-    timer = setTimeout(offUpdate, 100)
+    timer = setTimeout(offsetUpdate, 100)
   }
 
   let panzoom;
