@@ -40,7 +40,8 @@
       animation: animation,
       boxShadow: `#00000040 ${150 * box.scale}px ${150 * box.scale}px 4px`,
     }"
-    @contextmenu.prevent="() => deleteBox(box.id)">
+    @contextmenu.prevent="() => deleteBox(box.id)"
+    @touchend="editTextWithTouch">
     <!-- @click="() => deleteBox(box.id)" -->
 
   <!-- small rect -->
@@ -78,6 +79,7 @@ import { deleteBox, updateBox } from '../firebase'
 /* ---------------- props ------------------- */
 const props = defineProps({
   box : Object,
+  panzoom : Object,
 })
 
 /* ---------------- data -------------------- */
@@ -110,6 +112,21 @@ function saveContent() {
 function deleteAtRightClick(e) {
   console.log(e);
   //deleteBox(props.box.id);
+}
+
+function editTextWithTouch(e) {
+  contentEl.value.focus();
+  props.panzoom.pause();
+  console.log("paus");
+  function resume(ev) {
+    if(!ev.target.dataset.key && !ev.target.parentNode.dataset.key) {
+      props.panzoom.resume();
+      contentEl.value.blur();
+    }
+    window.removeEventListener('touchstart', resume);
+    console.log("resum");
+  }
+  window.addEventListener('touchstart', resume)
 }
 
 /* ---------------- watchers ---------------- */

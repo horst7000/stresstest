@@ -16,7 +16,8 @@
     @dblclick="createNewBox"
     @touchstart="createBoxAtDoubleTap">
     
-    <Box v-for="b, key in renderedBoxes" :box="b" :key="key"></Box>
+    <Box v-for="b, key in renderedBoxes" :box="b" :panzoom="panzoom" :key="key"></Box>
+    <!-- TODO panzoom pause/resume enums -->
   
   </div>
   </template>
