@@ -43,6 +43,7 @@
     @contextmenu.prevent="() => deleteBox(box.id)">
     <!-- @click="() => deleteBox(box.id)" -->
 
+  <!-- small rect -->
   <div
     :style="{
       right: 20*box.scale +'px',
@@ -52,10 +53,10 @@
       height: 80*box.scale +'px',
       float: 'right',
       borderRadius: 10*box.scale+'px',
-    }"></div>
+    }"
+    @touchstart="() => deleteBox(box.id)"></div>
   <p
     ref="contentEl"
-    v-if="!box.id.includes(':')"
     :style="{
       margin: 0,
       cursor:  'default',
