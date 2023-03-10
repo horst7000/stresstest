@@ -1,5 +1,6 @@
 {
     "hosting": {
+      "site": "nanote",
       "public": "dist",
       "ignore": [],
       "rewrites": [

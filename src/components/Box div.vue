@@ -39,9 +39,7 @@
       padding: 105*box.scale+'px',
       animation: animation,
       boxShadow: `#00000040 ${150 * box.scale}px ${150 * box.scale}px 4px`,
-    }"
-    @contextmenu.prevent="() => deleteBox(box.id)"
-    @touchend="editTextWithTouch">
+    }">
     <!-- @click="() => deleteBox(box.id)" -->
 
   <!-- small rect -->
@@ -50,11 +48,12 @@
       right: 20*box.scale +'px',
       top: 20*box.scale +'px',
       background: '#121324',
-      width: 80*box.scale +'px',
-      height: 80*box.scale +'px',
+      width: 120*box.scale +'px',
+      height: 120*box.scale +'px',
       float: 'right',
-      borderRadius: 10*box.scale+'px',
+      borderRadius: 15*box.scale+'px',
     }"
+    @click="() => deleteBox(box.id)"
     @touchstart="() => deleteBox(box.id)"></div>
   <p
     ref="contentEl"
@@ -109,26 +108,6 @@ function saveContent() {
   updateBox(props.box.id, {text : contentEl.value.innerText})
 }
 
-function deleteAtRightClick(e) {
-  console.log(e);
-  //deleteBox(props.box.id);
-}
-
-function editTextWithTouch(e) {
-  contentEl.value.focus();
-  props.panzoom.pause();
-  console.log("paus");
-  function resume(ev) {
-    if(!ev.target.dataset.key && !ev.target.parentNode.dataset.key) {
-      props.panzoom.resume();
-      contentEl.value.blur();
-    }
-    window.removeEventListener('touchstart', resume);
-    console.log("resum");
-  }
-  window.addEventListener('touchstart', resume)
-}
-
 /* ---------------- watchers ---------------- */
 watch(() => props.box.text, () => {
   // only change innerText if external change happened (prop changed)
@@ -138,14 +117,10 @@ watch(() => props.box.text, () => {
   }
 })
 
-// onUpdated(() => {
-//   !props.box.id.includes(':') && console.log("updated ");
-// })
-
 
 onMounted(() => {
   !props.box.id.includes(':') && console.log("box created");
-  setTimeout(() => animation.value = 'none', 600)
+  setTimeout(() => animation.value = 'none', 600);
 })
 
 </script>

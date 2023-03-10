@@ -13,8 +13,8 @@
   <div
     ref="container"
     style="position: fixed; will-change: transform; width: 100%; height: 100%;"
-    @dblclick="createNewBox"
-    @touchstart="createBoxAtDoubleTap">
+    @dblclick="createNewBox">
+    <!-- @touchstart="createBoxAtDoubleTap" -->
     
     <Box v-for="b, key in renderedBoxes" :box="b" :panzoom="panzoom" :key="key"></Box>
     <!-- TODO panzoom pause/resume enums -->
@@ -141,9 +141,7 @@
   }
 
   function createNewBox(e) {
-    console.log(e);
     const { decX, decY, chunk } = posAtXYAndDepth(e.clientX, e.clientY, 1)
-    console.log(decX, decY, chunk);
     createBox({
       x: decX-0.1,
       y: decY-0.1,
@@ -151,28 +149,6 @@
       scale: 1/(posScale.value*2),
       text:  'some text'
     })
-  }
-
-  let lastTouch;
-  function createBoxAtDoubleTap(e) {
-    if(e.touches.length > 1) {
-      lastTouch = null;
-      return;
-    } 
-    
-    if(lastTouch && Math.abs(lastTouch.clientX - e.touches[0].clientX) + Math.abs(lastTouch.clientY - e.touches[0].clientY) < 10) {
-      e.target.addEventListener('touchend', handleTouchEnd);
-    }
-    setTimeout(() => {
-      e.target.removeEventListener('touchend', handleTouchEnd);
-      lastTouch = null
-    }, 500);
-    lastTouch = e.touches[0];
-    
-    function handleTouchEnd() {
-      lastTouch && createNewBox(lastTouch);
-      lastTouch = null
-    }
   }
 
   function addBoxesFromChunksDeep(chunk, chunkPosX, chunkPosY, depth) {
@@ -288,6 +264,23 @@
     window.addEventListener('resize', () => {
       windowSize.value.w = window.innerWidth;
       windowSize.value.h = window.innerHeight;
+    })
+
+    let focused;
+    let gestures = new Hammer(container.value);
+    gestures.on('tap', (e) => {
+      if(e.target.tagName == 'P') {
+        e.target.focus();
+        focused = e.target;
+        panzoom.pause();
+      } else {
+        focused && focused.blur();
+        panzoom.resume();
+      }
+    })
+
+    gestures.on('doubletap', (e) => {
+      createNewBox(e.srcEvent);
     })
   });
   
