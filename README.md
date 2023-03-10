@@ -8,6 +8,6 @@ SVG+text vs. div+p was tested. Both performed bad, when using much big text. Sma
 
 ## Solution
 
-Solution was using a chunk system which unloads text which is not on screen. Especially when zoomed in, text got displayed bigger. But at the same time much of the initial displayed text was not on screen anymore, so could be unloaded.
+Solution was using a chunk system which unloads text which is not on screen. Especially when zoomed in text got displayed bigger. But at the same time much of the initial displayed text was not on screen anymore, so could be unloaded.
 
-Chunking system in combination with absolute positioned of divs showed best performance.
+Chunking system in combination with absolute positioned divs showed best performance.
