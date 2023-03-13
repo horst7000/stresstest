@@ -1,23 +1,21 @@
 <template>
   <p
-    style="position: fixed; left: 55%; background: #242424; z-index: 1; margin: 0;"
+    style="position: fixed; left: 55%; background: #242424; z-index: 2; margin: 0;"
     @click="() => showGrid = !showGrid"
     @touchstart="() => showGrid = !showGrid">
     {{ posChunk }} {{ Math.floor(posDecX*100)/100 }} {{ Math.floor(posDecY*100)/100 }} {{ Object.keys(renderedBoxes).length }}
   </p>
   <button
-    style="position: fixed; width: 40px; height: 40px; z-index: 1;"
+    style="position: fixed; width: 40px; height: 40px; z-index: 2;"
     @click="goToStart"
     @touchstart="goToStart">
   </button>
+  <Sel ref="selEl" :keys="selKeys" :dim="selDim" @dirtied="() => selDirty = true" @reset="resetSel"/>
   <div
     ref="container"
     style="position: fixed; will-change: transform; width: 100%; height: 100%;">
-    <!-- @touchstart="createBoxAtDoubleTap" -->
     
-    <Box v-for="b, key in renderedBoxes" :box="b" :key="key" @resumePanzoom="() => panzoom.resume()"></Box>
-    <!-- TODO panzoom pause/resume enums -->
-  
+    <Box v-for="b, key in renderedBoxes" :box="b" :key="key" @resumePanzoom="() => panzoom.resume()"/>
   </div>
   </template>
   
@@ -25,10 +23,11 @@
   import createPanZoom from 'panzoom';
   import { useCollection } from 'vuefire';
   import { boxesCollection, createBox } from '../firebase';
-  import { onMounted, onUnmounted, ref, watchEffect } from 'vue';
+  import { onMounted, onUnmounted, ref, watchEffect, computed } from 'vue';
   import { chunkPlusDelta, chunkZoomOutAtZero, chunkDeltaToZero, chunkZoomInAtZero } from '../utils/chunkArithmetic';
   import fastdom from 'fastdom';
   import Box from './Box div.vue';
+  import Sel from './Sel.vue';
   
   const FACTOR      = 6;  // in [3, 6]
   const MID_SYMBOL  = "f"
@@ -38,11 +37,14 @@
   const touched   = ref(false);
   const moving    = ref(false);
   const chunkLength = ref(3e3);
-  const chunkGraph = ref({});
-  const boxes     = useCollection(boxesCollection);
+  const chunkGraph  = ref({});
+  const boxes       = useCollection(boxesCollection);
   const renderedBoxes = ref({});
   const windowSize  = ref({w: 1, h: 1});
-  const showGrid = ref(false);
+  const showGrid    = ref(false);
+  const selKeys     = ref([]);
+  const selElements = ref([]);
+  const selDirty    = ref(false);
 
   // pos:
   const posChunkDefault = "1:"+MID_SYMBOL
@@ -54,6 +56,27 @@
   const posScale  = ref(1);
 
   /* ---------------- computed ---------------- */  
+  const selDim = computed(() => {
+      if(selDirty.value == true) selDirty.value = false;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      let minX = Infinity;
+      let minY = Infinity;
+
+      selElements.value.forEach((el) => {
+        if(!el.parentNode) return;
+        if(el.offsetLeft + el.offsetWidth > maxX) maxX = el.offsetLeft + el.offsetWidth
+        if(el.offsetLeft < minX) minX = el.offsetLeft
+        if(el.offsetTop + el.offsetHeight > maxY) maxY = el.offsetTop + el.offsetHeight
+        if(el.offsetTop < minY) minY = el.offsetTop
+      })
+      
+
+      const {x, y, scale} = panzoom ? panzoom.getTransform() : { x: 0, y:0, scale: 1};
+      return {w: (maxX-minX)*scale, h: (maxY-minY)*scale, x: minX*scale+x, y:minY*scale+y}
+  })
+
+
   /* ---------------- functions --------------- */  
   function offsetUpdate() {
     let { x, y, scale } = panzoom.getTransform();
@@ -150,6 +173,11 @@
     })
   }
 
+  function resetSel() {
+    selKeys.value = [];
+    selElements.value = [];        
+  }
+
   function addBoxesFromChunksDeep(chunk, chunkPosX, chunkPosY, depth) {
     if(!chunkGraph.value[chunk] || depth > searchDepth) return;
     
@@ -162,7 +190,7 @@
         id:     box.id,
         x:      chunkPosX + scaledChunkLength * box.x,
         y:      chunkPosY + scaledChunkLength * box.y,
-        width:  chunkLength.value,
+        width:  0.8*chunkLength.value,
         height: 0.5*chunkLength.value,
         scale:  box.scale * totalPosScale,
         chunk:  box.chunk,
@@ -250,6 +278,7 @@
   
   let timer;
   function onTransform() {
+    selDirty.value = true;
     clearTimeout(timer);
     timer = setTimeout(offsetUpdate, 100)
   }
@@ -270,15 +299,24 @@
     let focused;
     let gestures = new Hammer(container.value);
     gestures.on('tap', (e) => {
-      console.log("tap");
-      if(e.target.tagName == 'P') {
+      const key = e.target.dataset.key || e.target.parentNode.dataset.key;
+      const el  = e.target.dataset.key ? e.target :
+        e.target.parentNode.dataset.key ? e.target.parentNode : undefined;
+      
+      if(key && key.includes(':')) return;
+      if(!key) {
+        focused && focused.blur();
+        panzoom.resume();
+        resetSel();
+      } else if(selKeys.value.indexOf(key) != -1 && e.target.tagName == 'P') {
         e.target.focus();
         focused = e.target;
         panzoom.pause();
-      } else {
-        focused && focused.blur();
-        panzoom.resume();
       }
+      
+      resetSel(); // only single select
+      key && selKeys.value.push(key);
+      el && selElements.value.push(el);
     })
 
     gestures.on('doubletap', (e) => {

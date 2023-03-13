@@ -30,7 +30,7 @@
     :style="{
       position: 'fixed',
       background: '#3678bf',
-      width:  0.8*box.width * box.scale +'px',
+      width:  box.width * box.scale +'px',
       left:  box.x +'px',
       top: box.y +'px',
       borderRadius:  140 * box.scale +'px',
@@ -47,16 +47,12 @@
     <!-- small rect -->
     <div
       :style="{
-        right: 20*box.scale +'px',
-        top: 20*box.scale +'px',
         background: '#121324',
         width: 120*box.scale +'px',
         height: 120*box.scale +'px',
         float: 'right',
         borderRadius: 15*box.scale+'px',
-      }"
-      @click="() => deleteBox(box.id)"
-      @touchstart="() => deleteBox(box.id)"></div>
+      }"></div>
     <p
       ref="contentEl"
       :style="{
