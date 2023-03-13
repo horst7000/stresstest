@@ -303,11 +303,11 @@
       const el  = e.target.dataset.key ? e.target :
         e.target.parentNode.dataset.key ? e.target.parentNode : undefined;
       
-      if(key && key.includes(':')) return;
-      if(!key) {
+      if(!key || key.includes(':')) {
         focused && focused.blur();
         panzoom.resume();
         resetSel();
+        return;
       } else if(selKeys.value.indexOf(key) != -1 && e.target.tagName == 'P') {
         e.target.focus();
         focused = e.target;
