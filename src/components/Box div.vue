@@ -37,37 +37,41 @@
       fontSize: 140*box.scale+'pt',
       zIndex: Math.round(1/box.scale),
       padding: 105*box.scale+'px',
+      transition: 'opacity 0.1s',
       animation: animation,
       boxShadow: `#00000040 ${150 * box.scale}px ${150 * box.scale}px 4px`,
+      opacity: box.opacity,
     }">
     <!-- @click="() => deleteBox(box.id)" -->
 
-  <!-- small rect -->
-  <div
-    :style="{
-      right: 20*box.scale +'px',
-      top: 20*box.scale +'px',
-      background: '#121324',
-      width: 120*box.scale +'px',
-      height: 120*box.scale +'px',
-      float: 'right',
-      borderRadius: 15*box.scale+'px',
-    }"
-    @click="() => deleteBox(box.id)"
-    @touchstart="() => deleteBox(box.id)"></div>
-  <p
-    ref="contentEl"
-    :style="{
-      margin: 0,
-      cursor:  'default',
-      userSelect:  'none',
-      textRendering: 'optimizeSpeed',
-    }"
-    spellcheck="false"
-    contenteditable="true"
-    :innerText="box.text"
-    @input="saveContentDelayed"
-    v-once></p>
+    <!-- small rect -->
+    <div
+      :style="{
+        right: 20*box.scale +'px',
+        top: 20*box.scale +'px',
+        background: '#121324',
+        width: 120*box.scale +'px',
+        height: 120*box.scale +'px',
+        float: 'right',
+        borderRadius: 15*box.scale+'px',
+      }"
+      @click="() => deleteBox(box.id)"
+      @touchstart="() => deleteBox(box.id)"></div>
+    <p
+      ref="contentEl"
+      :style="{
+        margin: 0,
+        cursor:  'default',
+        userSelect:  'none',
+        textRendering: 'optimizeSpeed',
+      }"
+      spellcheck="false"
+      contenteditable="true"
+      :innerText="box.text"
+      @input="saveContentDelayed"
+      v-once
+      @blur="() => $emit('resumePanzoom')"
+      @mousedown="holdFocusBack"></p>
   </div>
 </template>
 
@@ -80,6 +84,8 @@ const props = defineProps({
   box : Object,
   panzoom : Object,
 })
+
+const emit = defineEmits(["pausePanzoom", "resumePanzoom"])
 
 /* ---------------- data -------------------- */
 const SAVE_DELAY    = 700;
@@ -108,6 +114,13 @@ function saveContent() {
   updateBox(props.box.id, {text : contentEl.value.innerText})
 }
 
+/* Click and immediately drag should not activate focus. If element is already focused
+ * the event is needed to move textcursor. Therefore watch the status at mousdown.
+ */
+function holdFocusBack(e) {
+  document.activeElement == contentEl.value ? null : e.preventDefault()
+}
+
 /* ---------------- watchers ---------------- */
 watch(() => props.box.text, () => {
   // only change innerText if external change happened (prop changed)
@@ -119,7 +132,7 @@ watch(() => props.box.text, () => {
 
 
 onMounted(() => {
-  !props.box.id.includes(':') && console.log("box created");
+  // !props.box.id.includes(':') && console.log("box mounted");
   setTimeout(() => animation.value = 'none', 600);
 })
 
@@ -132,15 +145,15 @@ onMounted(() => {
     transform: scale(0.5);
   }
   30% {
-    opacity: 0.7;
+    /* opacity: 0.7; */
     transform: scale(1.05);
   }
   60% {
-    opacity: 1;
+    /* opacity: 1; */
     transform: scale(0.97);
   }
   to {
-    opacity: 1;
+    /* opacity: 1; */
     transform: scale(1);
   }
 }

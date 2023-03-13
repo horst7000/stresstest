@@ -12,11 +12,10 @@
   </button>
   <div
     ref="container"
-    style="position: fixed; will-change: transform; width: 100%; height: 100%;"
-    @dblclick="createNewBox">
+    style="position: fixed; will-change: transform; width: 100%; height: 100%;">
     <!-- @touchstart="createBoxAtDoubleTap" -->
     
-    <Box v-for="b, key in renderedBoxes" :box="b" :panzoom="panzoom" :key="key"></Box>
+    <Box v-for="b, key in renderedBoxes" :box="b" :key="key" @resumePanzoom="() => panzoom.resume()"></Box>
     <!-- TODO panzoom pause/resume enums -->
   
   </div>
@@ -154,7 +153,8 @@
   function addBoxesFromChunksDeep(chunk, chunkPosX, chunkPosY, depth) {
     if(!chunkGraph.value[chunk] || depth > searchDepth) return;
     
-    let scaledChunkLength = chunkLength.value * posScale.value / Math.pow(FACTOR, depth);
+    const totalPosScale   = posScale.value / Math.pow(FACTOR, depth);
+    let scaledChunkLength = chunkLength.value * totalPosScale;
 
     chunkGraph.value[chunk].indices.forEach(boxIndex => {
       const box = boxes.value[boxIndex];
@@ -164,8 +164,9 @@
         y:      chunkPosY + scaledChunkLength * box.y,
         width:  chunkLength.value,
         height: 0.5*chunkLength.value,
-        scale:  box.scale * posScale.value / Math.pow(FACTOR, depth),
+        scale:  box.scale * totalPosScale,
         chunk:  box.chunk,
+        opacity: 1.7 - (1.7*totalPosScale),
         text:   box.text,
       };
     })
@@ -269,6 +270,7 @@
     let focused;
     let gestures = new Hammer(container.value);
     gestures.on('tap', (e) => {
+      console.log("tap");
       if(e.target.tagName == 'P') {
         e.target.focus();
         focused = e.target;
