@@ -22,12 +22,13 @@
   <script setup>
   import createPanZoom from 'panzoom';
   import { useCollection } from 'vuefire';
-  import { boxesCollection, createBox } from '../firebase';
+  import { boxesCollection, createBox, updateBox } from '../firebase';
   import { onMounted, onUnmounted, ref, watchEffect, computed } from 'vue';
   import { chunkPlusDelta, chunkZoomOutAtZero, chunkDeltaToZero, chunkZoomInAtZero } from '../utils/chunkArithmetic';
   import fastdom from 'fastdom';
   import Box from './Box div.vue';
   import Sel from './Sel.vue';
+  import interact from 'interactjs'
   
   const FACTOR      = 6;  // in [3, 6]
   const MID_SYMBOL  = "f"
@@ -139,7 +140,6 @@
   }
 
   function goToStart() {
-    console.log("btn");
     posChunk.value = posChunkDefault
     posDecX.value  = posDecXDefault
     posDecY.value  = posDecYDefault
@@ -196,6 +196,8 @@
         chunk:  box.chunk,
         opacity: 1.7 - (1.7*totalPosScale),
         text:   box.text,
+        boxIndex: boxIndex, // for DB update
+        scaledChunkLength: scaledChunkLength, // for DB update
       };
     })
 
@@ -206,6 +208,64 @@
     });
   }
 
+  /* ---------------- gestures ---------------- */
+  let focused, dragger;
+  function onTap(e) {
+    const key = e.target.dataset.key || e.target.parentNode.dataset.key;
+    const el  = e.target.dataset.key ? e.target :
+      e.target.parentNode.dataset.key ? e.target.parentNode : undefined;
+
+    dragger && dragger.unset(); // reset dragger
+    
+    if(!key || key.includes(':')) {
+      // reset
+      focused && focused.blur();
+      panzoom.resume();
+      resetSel();
+      return;
+    } else if(selKeys.value.indexOf(key) != -1 && e.target.tagName == 'P') {
+      // edit text
+      panzoom.pause();
+      e.target.focus();
+      focused = e.target;
+    } else {
+      // drag
+      let totalDx, totalDy;
+      let startRenderedX, startRenderedY; // necessary because panzoom.pause triggers too late
+      // and renderedBoxes get another update while dragging. Otherwise renderedBox += ev.dx possible.
+      dragger = interact(el).draggable({
+        onstart: (ev) => {
+          panzoom.pause();
+          startRenderedX = renderedBoxes.value[key].x;
+          startRenderedY = renderedBoxes.value[key].y;
+          totalDx = 0;
+          totalDy = 0;
+        },
+        onmove: (ev) => {
+          totalDx += ev.dx;
+          totalDy += ev.dy;
+          renderedBoxes.value[key].x = startRenderedX + totalDx;
+          renderedBoxes.value[key].y = startRenderedY + totalDy;
+          selDirty.value = true;
+        },
+        onend: (ev) => {
+          const { scaledChunkLength, boxIndex } = renderedBoxes.value[key];
+          const box = boxes.value[boxIndex];
+          updateBox(key, {x : box.x + totalDx/scaledChunkLength, y : box.y + totalDy/scaledChunkLength});
+          // TODO: HTML dataset-key should not affect DB update. Otherwise authorization fixes this too.
+          panzoom.resume();
+        },
+      });
+      dragger.styleCursor(false);
+    }
+    
+    // select
+    resetSel(); // only single select
+    key && selKeys.value.push(key);
+    el && selElements.value.push(el);
+  }
+
+  /* ---------------- watchers ---------------- */
   // update Chunk Graph
   watchEffect(() => {
     console.log("chunk graph reset");
@@ -260,7 +320,7 @@
   });
 
 
-
+  /* ---------------- panzoom ---------------- */
   const panzoomOptions = {
     smoothScroll: false,
     zoomDoubleClickSpeed: 1,
@@ -283,6 +343,7 @@
     timer = setTimeout(offsetUpdate, 100)
   }
 
+  /* -------------- lifecycle hooks ---------- */
   let panzoom;
   onMounted(() => {
     panzoom  = createPanZoom(container.value, panzoomOptions);
@@ -296,32 +357,9 @@
       windowSize.value.h = window.innerHeight;
     })
 
-    let focused;
-    let gestures = new Hammer(container.value);
-    gestures.on('tap', (e) => {
-      const key = e.target.dataset.key || e.target.parentNode.dataset.key;
-      const el  = e.target.dataset.key ? e.target :
-        e.target.parentNode.dataset.key ? e.target.parentNode : undefined;
-      
-      if(!key || key.includes(':')) {
-        focused && focused.blur();
-        panzoom.resume();
-        resetSel();
-        return;
-      } else if(selKeys.value.indexOf(key) != -1 && e.target.tagName == 'P') {
-        e.target.focus();
-        focused = e.target;
-        panzoom.pause();
-      }
-      
-      resetSel(); // only single select
-      key && selKeys.value.push(key);
-      el && selElements.value.push(el);
-    })
-
-    gestures.on('doubletap', (e) => {
-      createNewBox(e.srcEvent);
-    })
+    let gestures = interact(container.value);
+    gestures.on('tap', onTap)
+    gestures.on('doubletap', createNewBox);
   });
   
   onUnmounted(() => {
