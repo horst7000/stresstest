@@ -21,13 +21,17 @@
         float: 'right',
         marginRight: '-65px',
         zIndex: 1,
-        pointerEvents: 'auto'
+        pointerEvents: 'auto',
       }">
       <button
         style="width: 48px; height: 48px; margin: 5px; padding: 3px;"
         @click="delBoxes"
         @touchstart="delBoxes">
         <img src="../assets/delete.svg">
+      </button>
+      <button
+        style="width: 48px; height: 48px; margin: 5px; padding: 7px;">
+        <img style="width: 28px; height: 28px; border-radius: 20px; background: #3678bf; border: 2px solid white;"/>
       </button>
       
       </div>
